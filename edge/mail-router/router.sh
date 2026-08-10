@@ -19,11 +19,14 @@ cleanup() {
     iptables -t nat -D PREROUTING -i "$public_if" -p tcp -m multiport --dports "$mail_ports" -j "$chain" 2>/dev/null || true
     iptables -t nat -F "$chain" 2>/dev/null || true
     iptables -t nat -X "$chain" 2>/dev/null || true
+    iptables -t nat -D POSTROUTING -s "$office_tunnel_ip" -o "$public_if" -p tcp --dport 25 -j MASQUERADE 2>/dev/null || true
     iptables -t nat -D POSTROUTING -s "$mailcow_network" -o "$public_if" -p tcp --dport 25 -j MASQUERADE 2>/dev/null || true
     iptables -t mangle -D FORWARD -o "$tunnel" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null || true
     iptables -D INPUT -i tailscale0 -p udp -s "$office_ts" -d "$edge_ts" --dport "$wireguard_port" -j ACCEPT 2>/dev/null || true
     iptables -D FORWARD -i "$public_if" -o "$tunnel" -p tcp -d "$office_tunnel_ip" -m multiport --dports "$mail_ports" -j ACCEPT 2>/dev/null || true
     iptables -D FORWARD -i "$tunnel" -o "$public_if" -p tcp -s "$office_tunnel_ip" -m multiport --sports "$mail_ports" -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT 2>/dev/null || true
+    iptables -D FORWARD -i "$tunnel" -o "$public_if" -p tcp -s "$office_tunnel_ip" --dport 25 -j ACCEPT 2>/dev/null || true
+    iptables -D FORWARD -i "$public_if" -o "$tunnel" -p tcp -d "$office_tunnel_ip" --sport 25 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT 2>/dev/null || true
     iptables -D FORWARD -i "$tunnel" -o "$public_if" -p tcp -s "$mailcow_network" --dport 25 -j ACCEPT 2>/dev/null || true
     iptables -D FORWARD -i "$public_if" -o "$tunnel" -p tcp -d "$mailcow_network" --sport 25 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT 2>/dev/null || true
     ip route del "$mailcow_network" dev "$tunnel" 2>/dev/null || true
@@ -47,13 +50,14 @@ ip route replace "$mailcow_network" dev "$tunnel"
 iptables -t nat -N "$chain"
 iptables -t nat -A "$chain" -p tcp -j DNAT --to-destination "$office_tunnel_ip"
 iptables -t nat -I PREROUTING 1 -i "$public_if" -p tcp -m multiport --dports "$mail_ports" -j "$chain"
-iptables -t nat -I POSTROUTING 1 -s "$mailcow_network" -o "$public_if" -p tcp --dport 25 -j MASQUERADE
+# Docker SNATs mailcow containers to the office WireGuard address before this hop.
+iptables -t nat -I POSTROUTING 1 -s "$office_tunnel_ip" -o "$public_if" -p tcp --dport 25 -j MASQUERADE
 iptables -t mangle -I FORWARD 1 -o "$tunnel" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 
 iptables -I FORWARD 1 -i "$public_if" -o "$tunnel" -p tcp -d "$office_tunnel_ip" -m multiport --dports "$mail_ports" -j ACCEPT
 iptables -I FORWARD 1 -i "$tunnel" -o "$public_if" -p tcp -s "$office_tunnel_ip" -m multiport --sports "$mail_ports" -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-iptables -I FORWARD 1 -i "$tunnel" -o "$public_if" -p tcp -s "$mailcow_network" --dport 25 -j ACCEPT
-iptables -I FORWARD 1 -i "$public_if" -o "$tunnel" -p tcp -d "$mailcow_network" --sport 25 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+iptables -I FORWARD 1 -i "$tunnel" -o "$public_if" -p tcp -s "$office_tunnel_ip" --dport 25 -j ACCEPT
+iptables -I FORWARD 1 -i "$public_if" -o "$tunnel" -p tcp -d "$office_tunnel_ip" --sport 25 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 
 echo "Forwarding public mail ports to $office_tunnel_ip over $tunnel"
 while :; do
