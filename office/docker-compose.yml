@@ -26,7 +26,7 @@ services:
         - >-
           ip link show mailcow-edge >/dev/null &&
           ping -c 1 -W 2 "$${EDGE_TUNNEL_IP}" >/dev/null &&
-          ip rule show | grep -q "fwmark 0x19 lookup 252" &&
+          ip rule show | grep -q "fwmark 0x19/0xff lookup 252" &&
           iptables -t mangle -C PREROUTING -s "$${MAILCOW_NETWORK}" -p tcp --dport 25 -j MARK --set-xmark 0x19/0xff
       interval: 30s
       timeout: 10s
