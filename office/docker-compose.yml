@@ -1,0 +1,32 @@
+include:
+  - path: ../docker-compose.yml
+
+services:
+  mail-router-office:
+    build: ./mail-router
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+    environment:
+      EDGE_TAILSCALE_IP: ${EDGE_TAILSCALE_IP:-100.109.45.89}
+      OFFICE_TAILSCALE_IP: ${OFFICE_TAILSCALE_IP:-100.122.253.42}
+      EDGE_TUNNEL_IP: ${EDGE_TUNNEL_IP:-10.254.254.1}
+      OFFICE_TUNNEL_IP: ${OFFICE_TUNNEL_IP:-10.254.254.2}
+      MAILCOW_NETWORK: ${MAILCOW_NETWORK:-192.168.80.0/24}
+      MAILCOW_BRIDGE: ${MAILCOW_BRIDGE:-br-mailcow}
+      ROUTE_TABLE: ${ROUTE_TABLE:-252}
+      ROUTE_MARK: ${ROUTE_MARK:-0x19}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          ip link show mailcow-edge >/dev/null &&
+          ping -c 1 -W 2 "$${EDGE_TUNNEL_IP}" >/dev/null &&
+          ip rule show | grep -q "fwmark 0x19 lookup 252" &&
+          iptables -t mangle -C PREROUTING -s "$${MAILCOW_NETWORK}" -p tcp --dport 25 -j MARK --set-xmark 0x19/0xff
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
