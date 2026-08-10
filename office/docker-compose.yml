@@ -17,6 +17,9 @@ services:
       MAILCOW_BRIDGE: ${MAILCOW_BRIDGE:-br-mailcow}
       ROUTE_TABLE: ${ROUTE_TABLE:-252}
       ROUTE_MARK: ${ROUTE_MARK:-0x19}
+      WIREGUARD_PRIVATE_KEY: ${WIREGUARD_PRIVATE_KEY:-}
+      WIREGUARD_PEER_PUBLIC_KEY: ${WIREGUARD_PEER_PUBLIC_KEY:-}
+      WIREGUARD_PORT: ${WIREGUARD_PORT:-51821}
     healthcheck:
       test:
         - CMD-SHELL
@@ -29,4 +32,3 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
-
