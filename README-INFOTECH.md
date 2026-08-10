@@ -5,6 +5,7 @@ This public repository tracks mailcow `2026-07a` and adds the Infotech office/ed
 ## Architecture
 
 - `office/docker-compose.yml` runs the complete mailcow stack and all persistent volumes on `infotechserver`.
+- Runtime bind-mounted configuration and certificates live at `/home/infochel/apps/mailcow-data`, outside Dokploy's replaceable Git checkout.
 - `edge/docker-compose.yml` runs a web reverse proxy and a kernel mail router on Koara.
 - Public mail TCP ports are DNATed through WireGuard over Tailscale. The office mail services retain the original client IP.
 - New outbound SMTP connections from the mailcow network are policy-routed through the same tunnel and SNATed to Koara's public IP.
@@ -20,6 +21,8 @@ Create two Compose services from GitHub `main` and enable auto-deploy:
 - Edge: `edge/docker-compose.yml`, server `Koara`.
 
 Populate the office environment from `.env.infotech.example` with generated secrets. The edge service needs only the tunnel and routing variables.
+
+When updating the upstream mailcow tag, merge the new tracked `data/` files into the persistent data directory before deployment. Never replace or delete generated files in that directory.
 
 ## Public DNS and provider prerequisites
 
