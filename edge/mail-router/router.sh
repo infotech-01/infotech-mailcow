@@ -34,7 +34,6 @@ iptables -I INPUT 1 -i tailscale0 -p gre -s "$office_ts" -d "$edge_ts" -j ACCEPT
 ip tunnel add "$tunnel" mode gre local "$edge_ts" remote "$office_ts" ttl 64
 ip address add "$edge_tunnel_ip/30" dev "$tunnel"
 ip link set "$tunnel" mtu 1200 up
-sysctl -w "net.ipv4.conf.${tunnel}.rp_filter=0" >/dev/null
 ip route replace "$mailcow_network" dev "$tunnel"
 
 iptables -t nat -N "$chain"

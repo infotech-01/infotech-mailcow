@@ -36,7 +36,6 @@ iptables -I INPUT 1 -i tailscale0 -p gre -s "$edge_ts" -d "$office_ts" -j ACCEPT
 ip tunnel add "$tunnel" mode gre local "$office_ts" remote "$edge_ts" ttl 64
 ip address add "$office_tunnel_ip/30" dev "$tunnel"
 ip link set "$tunnel" mtu 1200 up
-sysctl -w "net.ipv4.conf.${tunnel}.rp_filter=0" >/dev/null
 
 ip route replace default dev "$tunnel" table "$route_table"
 ip rule add fwmark "$route_mark/$route_mask" priority "$route_priority" table "$route_table"
