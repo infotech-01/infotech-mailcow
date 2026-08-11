@@ -1,6 +1,8 @@
 #!/bin/sh
 set -eu
 
+edge_ts="${EDGE_TAILSCALE_IP:?EDGE_TAILSCALE_IP is required}"
+office_ts="${OFFICE_TAILSCALE_IP:?OFFICE_TAILSCALE_IP is required}"
 edge_tunnel_ip="${EDGE_TUNNEL_IP:-10.254.254.1}"
 office_tunnel_ip="${OFFICE_TUNNEL_IP:-10.254.254.2}"
 mailcow_network="${MAILCOW_NETWORK:-192.168.80.0/24}"
@@ -20,7 +22,8 @@ cleanup() {
     iptables -t nat -D POSTROUTING -s "$office_tunnel_ip" -o "$public_if" -p tcp --dport 25 -j MASQUERADE 2>/dev/null || true
     iptables -t nat -D POSTROUTING -s "$mailcow_network" -o "$public_if" -p tcp --dport 25 -j MASQUERADE 2>/dev/null || true
     iptables -t mangle -D FORWARD -o "$tunnel" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null || true
-    iptables -D INPUT -i "$public_if" -p udp --dport "$wireguard_port" -j ACCEPT 2>/dev/null || true
+    iptables -D INPUT -i tailscale0 -p udp -s "$office_ts" -d "$edge_ts" --dport "$wireguard_port" -j ACCEPT 2>/dev/null || true
+    iptables -D INPUT -i "$tunnel" -s "$office_tunnel_ip" -p icmp --icmp-type echo-request -j ACCEPT 2>/dev/null || true
     iptables -D INPUT -i "$tunnel" -p udp --dport 41641 -j DROP 2>/dev/null || true
     iptables -D FORWARD -i "$public_if" -o "$tunnel" -p tcp -d "$office_tunnel_ip" -m multiport --dports "$mail_ports" -j ACCEPT 2>/dev/null || true
     iptables -D FORWARD -i "$tunnel" -o "$public_if" -p tcp -s "$office_tunnel_ip" -m multiport --sports "$mail_ports" -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT 2>/dev/null || true
@@ -37,14 +40,15 @@ trap cleanup EXIT
 trap 'exit 0' INT TERM
 
 cleanup
-iptables -I INPUT 1 -i "$public_if" -p udp --dport "$wireguard_port" -j ACCEPT
+iptables -I INPUT 1 -i tailscale0 -p udp -s "$office_ts" -d "$edge_ts" --dport "$wireguard_port" -j ACCEPT
 ip link add "$tunnel" type wireguard
 umask 077
 printf '%s\n' "$wireguard_private_key" > "$key_file"
-wg set "$tunnel" private-key "$key_file" listen-port "$wireguard_port" peer "$wireguard_peer_public_key" allowed-ips "$office_tunnel_ip/32,$mailcow_network"
+wg set "$tunnel" private-key "$key_file" listen-port "$wireguard_port" peer "$wireguard_peer_public_key" allowed-ips "$office_tunnel_ip/32,$mailcow_network" endpoint "$office_ts:$wireguard_port" persistent-keepalive 15
 ip address add "$edge_tunnel_ip/30" dev "$tunnel"
 ip link set "$tunnel" mtu 1180 up
 iptables -I INPUT 1 -i "$tunnel" -p udp --dport 41641 -j DROP
+iptables -I INPUT 1 -i "$tunnel" -s "$office_tunnel_ip" -p icmp --icmp-type echo-request -j ACCEPT
 ip route replace "$mailcow_network" dev "$tunnel"
 
 iptables -t nat -N "$chain"
