@@ -2,6 +2,16 @@ include:
   - path: ../docker-compose.yml
 
 services:
+  frpc:
+    image: ghcr.io/fatedier/frpc:v0.61.2
+    restart: unless-stopped
+    network_mode: host
+    command: ["-c", "/etc/frp/frpc.toml"]
+    environment:
+      FRP_TOKEN: ${FRP_TOKEN:?Set the shared FRP_TOKEN in Dokploy}
+    volumes:
+      - ./frp/frpc.toml:/etc/frp/frpc.toml:ro
+
   mail-router-office:
     build: ./mail-router
     restart: unless-stopped

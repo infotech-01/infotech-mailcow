@@ -1,0 +1,13 @@
+bindAddr = "0.0.0.0"
+bindPort = 7000
+proxyBindAddr = "0.0.0.0"
+
+auth.method = "token"
+auth.token = "{{ .Envs.FRP_TOKEN }}"
+
+transport.tls.force = true
+
+allowPorts = [
+  { start = 15223, end = 15223 },
+  { start = 18083, end = 18083 },
+]

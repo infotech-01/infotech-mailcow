@@ -1,0 +1,26 @@
+serverAddr = "31.76.126.146"
+serverPort = 7000
+loginFailExit = false
+
+auth.method = "token"
+auth.token = "{{ .Envs.FRP_TOKEN }}"
+
+transport.protocol = "tcp"
+transport.poolCount = 5
+transport.tls.enable = true
+
+[[proxies]]
+name = "infotech-mail-web"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 18082
+remotePort = 18083
+transport.useEncryption = true
+
+[[proxies]]
+name = "infotech-simplex"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 5223
+remotePort = 15223
+transport.useEncryption = true

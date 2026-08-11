@@ -1,4 +1,17 @@
 services:
+  frps:
+    image: ghcr.io/fatedier/frps:v0.61.2
+    restart: unless-stopped
+    command: ["-c", "/etc/frp/frps.toml"]
+    environment:
+      FRP_TOKEN: ${FRP_TOKEN:?Set the shared FRP_TOKEN in Dokploy}
+    volumes:
+      - ./frp/frps.toml:/etc/frp/frps.toml:ro
+    ports:
+      - "7000:7000"
+    networks:
+      - dokploy-network
+
   web-edge:
     image: nginx:1.29.0-alpine
     restart: unless-stopped
@@ -31,6 +44,8 @@ services:
       - "traefik.http.routers.infotech-mail-websecure.service=infotech-mail"
     networks:
       - dokploy-network
+    depends_on:
+      - frps
 
   mail-router-edge:
     build: ./mail-router

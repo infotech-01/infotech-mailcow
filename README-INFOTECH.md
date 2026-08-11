@@ -9,6 +9,7 @@ This public repository tracks mailcow `2026-07a` and adds the Infotech office/ed
 - `edge/docker-compose.yml` runs a web reverse proxy and a kernel mail router on Koara.
 - Public mail TCP ports are DNATed through a dedicated WireGuard tunnel carried by the direct Tailscale peer connection. The office mail services retain the original client IP.
 - New outbound SMTP connections from the mailcow network are policy-routed through the same tunnel and SNATed to Koara's public IP.
+- Mailcow web traffic and SimpleX use an authenticated TLS reverse tunnel over raw TCP because the office ISP severely throttles UDP overlay throughput.
 - Koara has no MTA, mail queue, mailbox, database, or persistent mail volume.
 - Tailscale discovery is blocked inside the WireGuard tunnel to prevent recursive path selection and connection stalls.
 
