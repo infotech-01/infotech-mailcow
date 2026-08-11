@@ -7,9 +7,10 @@ This public repository tracks mailcow `2026-07a` and adds the Infotech office/ed
 - `office/docker-compose.yml` runs the complete mailcow stack and all persistent volumes on `infotechserver`.
 - Runtime bind-mounted configuration and certificates live at `/home/infochel/apps/mailcow-data`, outside Dokploy's replaceable Git checkout.
 - `edge/docker-compose.yml` runs a web reverse proxy and a kernel mail router on Koara.
-- Public mail TCP ports are DNATed through WireGuard over Tailscale. The office mail services retain the original client IP.
+- Public mail TCP ports are DNATed through a direct WireGuard tunnel. The office mail services retain the original client IP.
 - New outbound SMTP connections from the mailcow network are policy-routed through the same tunnel and SNATed to Koara's public IP.
 - Koara has no MTA, mail queue, mailbox, database, or persistent mail volume.
+- Tailscale is reserved for administration and is not part of the mail data path.
 
 The fixed office mailcow subnet is `192.168.80.0/24`; it is intentionally outside the Docker networks already allocated on `infotechserver`.
 

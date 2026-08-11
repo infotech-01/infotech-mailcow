@@ -4,6 +4,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./web/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - sogo-cache:/var/cache/nginx
     healthcheck:
       test:
         - CMD-SHELL
@@ -38,8 +39,6 @@ services:
     cap_add:
       - NET_ADMIN
     environment:
-      EDGE_TAILSCALE_IP: ${EDGE_TAILSCALE_IP:-100.109.45.89}
-      OFFICE_TAILSCALE_IP: ${OFFICE_TAILSCALE_IP:-100.122.253.42}
       EDGE_TUNNEL_IP: ${EDGE_TUNNEL_IP:-10.254.254.1}
       OFFICE_TUNNEL_IP: ${OFFICE_TUNNEL_IP:-10.254.254.2}
       MAILCOW_NETWORK: ${MAILCOW_NETWORK:-192.168.80.0/24}
@@ -63,3 +62,6 @@ services:
 networks:
   dokploy-network:
     external: true
+
+volumes:
+  sogo-cache:
