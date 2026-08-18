@@ -24,7 +24,7 @@ Create three Compose services from GitHub `main` and enable auto-deploy:
 - Edge: `edge/docker-compose.yml`, server `Koara`.
 - Relay: `relay/docker-compose.yml`, server `Local`.
 
-The relay needs `RELAY_HOSTNAME`, `RELAY_BIND_IP` (the Dokploy host's Tailscale address), `RELAY_PORT` and `RELAY_CLIENTS` (the office Tailscale address). Keep `RELAY_PORT` off 25: the office marks port 25 and policy-routes it into the edge tunnel, so a relay on 25 would never be reached. Mailcow points at the relay through Configuration -> Routing -> Relayhost, so DKIM signing still happens at the office and the relay only carries finished mail.
+The relay needs `RELAY_HOSTNAME`, `RELAY_BIND_IP` (the Dokploy host's Tailscale address), `RELAY_PORT`, `RELAY_CLIENTS` (the office Tailscale address) and `RELAY_PUBLIC_IP` (the address SPF and the PTR record name). Keep `RELAY_PORT` off 25: the office marks port 25 and policy-routes it into the edge tunnel, so a relay on 25 would never be reached. Mailcow points at the relay through Configuration -> Routing -> Relayhost, so DKIM signing still happens at the office and the relay only carries finished mail.
 
 Populate the office environment from `.env.infotech.example` with generated secrets. The edge service needs only the tunnel and routing variables.
 

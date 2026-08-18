@@ -7,6 +7,7 @@ services:
       RELAY_HOSTNAME: ${RELAY_HOSTNAME:?Set the public HELO name of the relay}
       RELAY_BIND_IP: ${RELAY_BIND_IP:?Set the private address the relay listens on}
       RELAY_PORT: ${RELAY_PORT:-2525}
+      RELAY_PUBLIC_IP: ${RELAY_PUBLIC_IP:?Set the public address outbound mail is sent from}
       RELAY_CLIENTS: ${RELAY_CLIENTS:?Set the client addresses allowed to relay}
       RELAY_MESSAGE_SIZE_LIMIT: ${RELAY_MESSAGE_SIZE_LIMIT:-104857600}
       RELAY_QUEUE_LIFETIME: ${RELAY_QUEUE_LIFETIME:-1d}

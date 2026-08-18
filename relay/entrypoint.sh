@@ -4,6 +4,7 @@ set -eu
 relay_hostname="${RELAY_HOSTNAME:?RELAY_HOSTNAME is required}"
 relay_clients="${RELAY_CLIENTS:?RELAY_CLIENTS is required}"
 relay_bind_ip="${RELAY_BIND_IP:?RELAY_BIND_IP is required}"
+relay_public_ip="${RELAY_PUBLIC_IP:?RELAY_PUBLIC_IP is required}"
 relay_port="${RELAY_PORT:-2525}"
 message_size_limit="${RELAY_MESSAGE_SIZE_LIMIT:-104857600}"
 queue_lifetime="${RELAY_QUEUE_LIFETIME:-1d}"
@@ -40,6 +41,11 @@ postconf -e "smtpd_tls_security_level=none"
 postconf -e "message_size_limit=${message_size_limit}"
 postconf -e "maximal_queue_lifetime=${queue_lifetime}"
 postconf -e "bounce_queue_lifetime=${queue_lifetime}"
+
+# A single-address inet_interfaces would otherwise become the source address of
+# outbound mail as well, which sends everything from the Tailscale address.
+# This is also the address that SPF and the PTR record must name.
+postconf -e "smtp_bind_address=${relay_public_ip}"
 
 postconf -e "smtp_tls_security_level=may"
 postconf -e "smtp_tls_CApath=/etc/ssl/certs"
