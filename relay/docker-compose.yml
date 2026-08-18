@@ -2,14 +2,15 @@ services:
   smtp-relay:
     build: .
     restart: unless-stopped
+    network_mode: host
     environment:
       RELAY_HOSTNAME: ${RELAY_HOSTNAME:?Set the public HELO name of the relay}
+      RELAY_BIND_IP: ${RELAY_BIND_IP:?Set the private address the relay listens on}
+      RELAY_PORT: ${RELAY_PORT:-2525}
       RELAY_CLIENTS: ${RELAY_CLIENTS:?Set the client addresses allowed to relay}
       RELAY_MESSAGE_SIZE_LIMIT: ${RELAY_MESSAGE_SIZE_LIMIT:-104857600}
       RELAY_QUEUE_LIFETIME: ${RELAY_QUEUE_LIFETIME:-1d}
       TZ: ${TZ:-UTC}
-    ports:
-      - "${RELAY_BIND_IP:?Set the private address the relay listens on}:${RELAY_PORT:-2525}:25"
     volumes:
       - relay-spool:/var/spool/postfix
     healthcheck:
@@ -18,12 +19,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 20s
-    networks:
-      - dokploy-network
-
-networks:
-  dokploy-network:
-    external: true
 
 volumes:
   relay-spool:

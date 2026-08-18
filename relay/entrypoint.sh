@@ -3,6 +3,8 @@ set -eu
 
 relay_hostname="${RELAY_HOSTNAME:?RELAY_HOSTNAME is required}"
 relay_clients="${RELAY_CLIENTS:?RELAY_CLIENTS is required}"
+relay_bind_ip="${RELAY_BIND_IP:?RELAY_BIND_IP is required}"
+relay_port="${RELAY_PORT:-2525}"
 message_size_limit="${RELAY_MESSAGE_SIZE_LIMIT:-104857600}"
 queue_lifetime="${RELAY_QUEUE_LIFETIME:-1d}"
 
@@ -16,8 +18,14 @@ postconf -e "relay_domains="
 postconf -e "local_transport=error:5.1.1 local delivery is disabled on this relay"
 postconf -e "alias_maps="
 postconf -e "alias_database="
-postconf -e "inet_interfaces=all"
+# The container shares the host network namespace so that mynetworks sees the
+# real client address instead of a Docker gateway. Listen on the private
+# address only, and off port 25: the office marks port 25 and policy-routes it
+# into the edge tunnel, which does not reach this host.
+postconf -e "inet_interfaces=${relay_bind_ip}"
 postconf -e "inet_protocols=ipv4"
+postconf -M# smtp/inet 2>/dev/null || true
+postconf -M "${relay_port}/inet=${relay_port} inet n - n - - smtpd"
 
 # Only the office mailcow may relay. The published port is bound to a private
 # address, so this is the second lock rather than the only one.
